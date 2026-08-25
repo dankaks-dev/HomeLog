@@ -139,8 +139,35 @@ export default function HomeLog() {
 
 function PropertyFormModal({ onClose, onAddProperty }) {
   const [postcode, setPostcode] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
   const [propertyType, setPropertyType] = useState('Terraced');
   const [manualValue, setManualValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [estimatedValue, setEstimatedValue] = useState(null);
+
+  const handleLookup = async () => {
+    if (!postcode || !houseNumber) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch('/api/valuate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postcode, houseNumber, propertyType })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        setEstimatedValue(data);
+        setManualValue(data.estimatedValue.toString());
+      } else {
+        alert('Property not found. Please enter value manually.');
+      }
+    } catch (error) {
+      alert('Lookup failed. Please enter value manually.');
+    }
+    setLoading(false);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -159,12 +186,16 @@ function PropertyFormModal({ onClose, onAddProperty }) {
 
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px' }}>
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#36756F', marginBottom: '24px' }}>Add Property</h3>
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
           <div>
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>Postcode</label>
             <input placeholder="CR2 6DZ" required value={postcode} onChange={(e) => setPostcode(e.target.value.toUpperCase())} style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', marginTop: '6px', boxSizing: 'border-box' }} />
+          </div>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>House Number</label>
+            <input placeholder="42" required value={houseNumber} onChange={(e) => setHouseNumber(e.target.value)} style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', marginTop: '6px', boxSizing: 'border-box' }} />
           </div>
           <div>
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>Property Type</label>
@@ -176,6 +207,15 @@ function PropertyFormModal({ onClose, onAddProperty }) {
               <option>Bungalow</option>
             </select>
           </div>
+          <button type="button" onClick={handleLookup} disabled={!postcode || !houseNumber || loading} style={{ backgroundColor: loading ? '#CCC' : '#A68B5B', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer' }}>
+            {loading ? '🔍 Looking up...' : '🔍 Look Up Valuation'}
+          </button>
+          {estimatedValue && (
+            <div style={{ backgroundColor: '#FAF8F3', padding: '16px', borderRadius: '8px', border: '1px solid #E8E3DB' }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: '600', color: '#8B8B8B' }}>Estimated Value: £{estimatedValue.estimatedValue.toLocaleString()}</p>
+              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#8B8B8B' }}>{estimatedValue.floorArea}m² · {estimatedValue.method}</p>
+            </div>
+          )}
           <div>
             <label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>Property Name</label>
             <input name="name" placeholder="42 Kensington Road" required style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', marginTop: '6px', boxSizing: 'border-box' }} />
@@ -190,6 +230,7 @@ function PropertyFormModal({ onClose, onAddProperty }) {
           </div>
           <button type="submit" disabled={!manualValue} style={{ backgroundColor: manualValue ? '#36756F' : '#CCC', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', marginTop: '16px' }}>Create</button>
         </form>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', position: 'absolute', top: '16px', right: '16px' }}>×</button>
       </div>
     </div>
   );
@@ -198,7 +239,7 @@ function PropertyFormModal({ onClose, onAddProperty }) {
 function EntryFormModal({ onClose, onSubmit }) {
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '600px' }}>
+      <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', width: '90%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#36756F', marginBottom: '24px' }}>Log Record</h3>
         <form onSubmit={onSubmit} style={{ display: 'grid', gap: '16px' }}>
           <div><label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>Date</label><input name="date" type="date" required defaultValue={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', marginTop: '6px', boxSizing: 'border-box' }} /></div>
@@ -208,6 +249,7 @@ function EntryFormModal({ onClose, onSubmit }) {
           <div><label style={{ fontSize: '13px', fontWeight: '600', color: '#8B8B8B' }}>Cost (£)</label><input name="cost" type="number" placeholder="0" style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', marginTop: '6px', boxSizing: 'border-box' }} /></div>
           <button type="submit" style={{ backgroundColor: '#36756F', color: 'white', border: 'none', padding: '12px', borderRadius: '6px', cursor: 'pointer', marginTop: '16px' }}>Save</button>
         </form>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', position: 'absolute', top: '16px', right: '16px' }}>×</button>
       </div>
     </div>
   );
@@ -220,15 +262,13 @@ function WhatIfCalc({ baselineValue }) {
   return (
     <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', padding: '32px', marginBottom: '40px', border: '1px solid #E8E3DB' }}>
       <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', fontWeight: '700', color: '#36756F' }}>What If Calculator</h3>
-      <div style={{ display: 'grid', gap: '16px' }}>
-        <input type="number" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Enter cost (£)" style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', boxSizing: 'border-box' }} />
-        {impact && (
-          <div style={{ backgroundColor: '#FAF8F3', padding: '20px', borderRadius: '8px', border: '1px solid #E8E3DB' }}>
-            <p style={{ margin: 0, fontSize: '14px', color: '#2C2C2C' }}>Impact: <strong>+{impact}%</strong></p>
-            <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#8B8B8B' }}>Value add: £{Math.round(baselineValue * (impact / 100)).toLocaleString()}</p>
-          </div>
-        )}
-      </div>
+      <input type="number" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="Enter cost (£)" style={{ width: '100%', padding: '12px', border: '1px solid #E8E3DB', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '16px' }} />
+      {impact && (
+        <div style={{ backgroundColor: '#FAF8F3', padding: '20px', borderRadius: '8px', border: '1px solid #E8E3DB' }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#2C2C2C' }}>Impact: <strong>+{impact}%</strong></p>
+          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#8B8B8B' }}>Value add: £{Math.round(baselineValue * (impact / 100)).toLocaleString()}</p>
+        </div>
+      )}
     </div>
   );
 }
