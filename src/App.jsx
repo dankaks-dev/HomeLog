@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, useStripe } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(process.env.REACT_STRIPE_PUBLIC_KEY);
+const stripeKey = process.env.REACT_APP_STRIPE_PUBLIC_KEY || process.env.REACT_STRIPE_PUBLIC_KEY;
+const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 
 const COLORS = {
   primary: '#36756F',
