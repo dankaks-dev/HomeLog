@@ -63,7 +63,7 @@ function HomeLog() {
   };
 
   const deleteProperty = (id) => {
-    if (confirm('Delete this property?')) {
+    if (window.confirm('Delete this property?')) {
       setProperties(properties.filter(p => p.id !== id));
     }
   };
