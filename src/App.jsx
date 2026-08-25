@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, useStripe } from '@stripe/react-stripe-js';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const stripePromise = loadStripe(process.env.REACT_STRIPE_PUBLIC_KEY);
 
@@ -13,13 +11,7 @@ const COLORS = {
   surface: '#FAF8F3',
   border: '#E8E3DB',
   text: '#2C2C2C',
-  secondary: '#8B8B8B',
-  success: '#6FA876'
-};
-
-const FONTS = {
-  display: '"Playfair Display", serif',
-  body: '"Lora", serif'
+  secondary: '#8B8B8B'
 };
 
 function HomeLog() {
@@ -47,13 +39,15 @@ function HomeLog() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId })
-      }).then(r => r.json()).then(data => {
-        if (data.success) {
-          setIsPro(true);
-          localStorage.setItem('homelog_pro', 'true');
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      });
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setIsPro(true);
+            localStorage.setItem('homelog_pro', 'true');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        });
     }
   }, []);
 
@@ -69,7 +63,7 @@ function HomeLog() {
   };
 
   const deleteProperty = (id) => {
-    if (confirm('Delete this property forever?')) {
+    if (confirm('Delete this property?')) {
       setProperties(properties.filter(p => p.id !== id));
     }
   };
@@ -103,11 +97,7 @@ function HomeLog() {
 
   return (
     <Elements stripe={stripePromise}>
-      <div style={{
-        backgroundColor: COLORS.background,
-        minHeight: '100vh',
-        fontFamily: FONTS.body
-      }}>
+      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
         {/* Header */}
         <header style={{
           backgroundColor: COLORS.primary,
@@ -116,55 +106,30 @@ function HomeLog() {
           borderBottom: `4px solid ${COLORS.accent}`,
           boxShadow: '0 4px 16px rgba(54, 117, 111, 0.12)'
         }}>
-          <div style={{
-            maxWidth: '1400px',
-            margin: '0 auto',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <div>
-              <h1 style={{
-                fontFamily: FONTS.display,
-                fontSize: '48px',
-                fontWeight: 700,
-                margin: '0',
-                letterSpacing: '-1px'
-              }}>
-                HomeLog
-              </h1>
-              <p style={{
-                fontFamily: FONTS.body,
-                fontSize: '16px',
-                margin: '8px 0 0 0',
-                opacity: 0.95,
-                fontWeight: 300
-              }}>
-                Your property. Your records. Your proof.
-              </p>
-            </div>
-            {isPro && (
-              <div style={{
-                backgroundColor: COLORS.accent,
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontFamily: FONTS.body,
-                fontSize: '13px',
-                fontWeight: 700,
-                letterSpacing: '0.5px'
-              }}>
-                ✓ PRO ACTIVE
-              </div>
-            )}
+          <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+            <h1 style={{
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '48px',
+              fontWeight: 700,
+              margin: 0,
+              letterSpacing: '-1px'
+            }}>
+              HomeLog
+            </h1>
+            <p style={{
+              fontFamily: '"Lora", serif',
+              fontSize: '16px',
+              margin: '8px 0 0 0',
+              opacity: 0.95,
+              fontWeight: 300
+            }}>
+              Your property. Your records. Your proof.
+            </p>
           </div>
         </header>
 
         {/* Main */}
-        <main style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: '60px 40px'
-        }}>
+        <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '60px 40px' }}>
           {properties.length === 0 ? (
             <div style={{
               textAlign: 'center',
@@ -174,7 +139,7 @@ function HomeLog() {
               border: `1px solid ${COLORS.border}`
             }}>
               <h2 style={{
-                fontFamily: FONTS.display,
+                fontFamily: '"Playfair Display", serif',
                 fontSize: '42px',
                 fontWeight: 700,
                 color: COLORS.primary,
@@ -184,7 +149,7 @@ function HomeLog() {
                 Welcome to HomeLog
               </h2>
               <p style={{
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '18px',
                 color: COLORS.secondary,
                 maxWidth: '600px',
@@ -201,40 +166,34 @@ function HomeLog() {
                   border: 'none',
                   borderRadius: '10px',
                   padding: '18px 48px',
-                  fontFamily: FONTS.body,
+                  fontFamily: '"Lora", serif',
                   fontSize: '16px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   boxShadow: `0 6px 20px rgba(54, 117, 111, 0.25)`,
-                  transition: 'all 0.3s ease',
-                  letterSpacing: '0.3px'
+                  transition: 'all 0.3s ease'
                 }}
                 onMouseOver={(e) => {
                   e.target.style.backgroundColor = '#2a5a57';
                   e.target.style.transform = 'translateY(-3px)';
-                  e.target.style.boxShadow = '0 10px 30px rgba(54, 117, 111, 0.35)';
                 }}
                 onMouseOut={(e) => {
                   e.target.style.backgroundColor = COLORS.primary;
                   e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(54, 117, 111, 0.25)';
                 }}
               >
                 + Add Your First Property
               </button>
             </div>
           ) : (
-            <div>
-              {properties.map(property => (
-                <PropertyCard
-                  key={property.id}
-                  property={property}
-                  isPro={isPro}
-                  onViewDetails={() => setSelectedPropertyId(property.id)}
-                  onDelete={() => deleteProperty(property.id)}
-                />
-              ))}
-            </div>
+            properties.map(property => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                isPro={isPro}
+                onViewDetails={() => setSelectedPropertyId(property.id)}
+              />
+            ))
           )}
         </main>
 
@@ -245,11 +204,11 @@ function HomeLog() {
           padding: '40px',
           textAlign: 'center',
           color: COLORS.secondary,
-          fontFamily: FONTS.body,
+          fontFamily: '"Lora", serif',
           fontSize: '13px',
           marginTop: '60px'
         }}>
-          <p style={{ margin: '0', letterSpacing: '0.3px' }}>
+          <p style={{ margin: 0 }}>
             HomeLog by Crown and Capital • Your property records, perfectly maintained
           </p>
         </footer>
@@ -267,10 +226,9 @@ function HomeLog() {
   );
 }
 
-function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
+function PropertyCard({ property, isPro, onViewDetails }) {
   const totalImprovement = property.entries.reduce((sum, entry) => sum + (entry.impactValue || 0), 0);
   const improvementValue = property.baselineValue + totalImprovement;
-  const latestEPC = property.entries.filter(e => e.epcAfter).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
   return (
     <div
@@ -296,10 +254,10 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
         e.currentTarget.style.borderColor = COLORS.border;
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
         <div>
           <h3 style={{
-            fontFamily: FONTS.display,
+            fontFamily: '"Playfair Display", serif',
             fontSize: '32px',
             fontWeight: 700,
             color: COLORS.primary,
@@ -309,26 +267,23 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
             {property.name}
           </h3>
           <p style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '15px',
             color: COLORS.secondary,
-            margin: '0',
-            letterSpacing: '0.2px'
+            margin: 0
           }}>
             {property.location} • {property.postcode}
           </p>
         </div>
         {isPro && (
           <span style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '11px',
             fontWeight: 700,
             color: COLORS.accent,
-            backgroundColor: `${COLORS.accent}15`,
+            backgroundColor: 'rgba(166, 139, 91, 0.1)',
             padding: '8px 14px',
-            borderRadius: '6px',
-            border: `1px solid ${COLORS.accent}40`,
-            letterSpacing: '0.5px'
+            borderRadius: '6px'
           }}>
             ✓ PRO
           </span>
@@ -344,7 +299,7 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
       }}>
         <div>
           <p style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '12px',
             textTransform: 'uppercase',
             letterSpacing: '0.8px',
@@ -355,7 +310,7 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
             Property Value
           </p>
           <p style={{
-            fontFamily: FONTS.display,
+            fontFamily: '"Playfair Display", serif',
             fontSize: '36px',
             fontWeight: 700,
             color: COLORS.primary,
@@ -365,10 +320,10 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
             £{improvementValue.toLocaleString()}
           </p>
           <p style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '13px',
             color: COLORS.secondary,
-            margin: '0'
+            margin: 0
           }}>
             +£{totalImprovement.toLocaleString()} from improvements
           </p>
@@ -376,7 +331,7 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
 
         <div>
           <p style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '12px',
             textTransform: 'uppercase',
             letterSpacing: '0.8px',
@@ -387,7 +342,7 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
             Total Improvements
           </p>
           <p style={{
-            fontFamily: FONTS.display,
+            fontFamily: '"Playfair Display", serif',
             fontSize: '36px',
             fontWeight: 700,
             color: COLORS.accent,
@@ -397,48 +352,14 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
             {property.entries.length}
           </p>
           <p style={{
-            fontFamily: FONTS.body,
+            fontFamily: '"Lora", serif',
             fontSize: '13px',
             color: COLORS.secondary,
-            margin: '0'
+            margin: 0
           }}>
             records logged
           </p>
         </div>
-
-        {latestEPC && (
-          <div>
-            <p style={{
-              fontFamily: FONTS.body,
-              fontSize: '12px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.8px',
-              color: COLORS.secondary,
-              margin: '0 0 12px 0',
-              fontWeight: 700
-            }}>
-              Energy Rating
-            </p>
-            <p style={{
-              fontFamily: FONTS.display,
-              fontSize: '36px',
-              fontWeight: 700,
-              color: COLORS.primary,
-              margin: '0 0 8px 0',
-              letterSpacing: '-0.5px'
-            }}>
-              {latestEPC.epcAfter}
-            </p>
-            <p style={{
-              fontFamily: FONTS.body,
-              fontSize: '13px',
-              color: COLORS.success,
-              margin: '0'
-            }}>
-              Efficiency tracked
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -447,34 +368,16 @@ function PropertyCard({ property, isPro, onViewDetails, onDelete }) {
 function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }) {
   const totalImprovement = property.entries.reduce((sum, entry) => sum + (entry.impactValue || 0), 0);
   const improvementValue = property.baselineValue + totalImprovement;
-  const latestEPC = property.entries.filter(e => e.epcAfter).sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-  const exportPDF = async () => {
-    const element = document.getElementById('pdf-content');
-    const canvas = await html2canvas(element, { scale: 2 });
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 210;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-    pdf.save(`${property.name}.pdf`);
-  };
 
   return (
     <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
-      {/* Header */}
       <header style={{
         backgroundColor: COLORS.primary,
         color: 'white',
         padding: '48px 40px',
         borderBottom: `4px solid ${COLORS.accent}`
       }}>
-        <div style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center'
-        }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', alignItems: 'center' }}>
           <button
             onClick={onBack}
             style={{
@@ -482,23 +385,19 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               color: 'white',
               border: 'none',
               cursor: 'pointer',
-              fontFamily: FONTS.body,
-              fontSize: '16px',
+              fontFamily: '"Lora", serif',
+              fontSize: '18px',
               padding: '8px 16px',
-              marginRight: '32px',
-              transition: 'opacity 0.2s',
-              fontSize: '18px'
+              marginRight: '32px'
             }}
-            onMouseOver={(e) => e.target.style.opacity = '0.8'}
-            onMouseOut={(e) => e.target.style.opacity = '1'}
           >
             ← Back
           </button>
           <h1 style={{
-            fontFamily: FONTS.display,
+            fontFamily: '"Playfair Display", serif',
             fontSize: '42px',
             fontWeight: 700,
-            margin: '0',
+            margin: 0,
             letterSpacing: '-0.5px'
           }}>
             {property.name}
@@ -506,19 +405,13 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
         </div>
       </header>
 
-      <main style={{
-        maxWidth: '1400px',
-        margin: '0 auto',
-        padding: '60px 40px'
-      }}>
-        {/* Overview Cards */}
+      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '60px 40px' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '28px',
           marginBottom: '48px'
         }}>
-          {/* Property Value */}
           <div style={{
             backgroundColor: COLORS.surface,
             border: `2px solid ${COLORS.border}`,
@@ -527,7 +420,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
             boxShadow: '0 4px 12px rgba(54, 117, 111, 0.08)'
           }}>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '12px',
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
@@ -538,7 +431,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               Property Value
             </p>
             <p style={{
-              fontFamily: FONTS.display,
+              fontFamily: '"Playfair Display", serif',
               fontSize: '48px',
               fontWeight: 700,
               color: COLORS.primary,
@@ -548,17 +441,15 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               £{improvementValue.toLocaleString()}
             </p>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               color: COLORS.secondary,
-              margin: '0',
-              lineHeight: '1.5'
+              margin: 0
             }}>
               +£{totalImprovement.toLocaleString()} gain from improvements
             </p>
           </div>
 
-          {/* Total Improvements */}
           <div style={{
             backgroundColor: COLORS.surface,
             border: `2px solid ${COLORS.border}`,
@@ -567,7 +458,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
             boxShadow: '0 4px 12px rgba(54, 117, 111, 0.08)'
           }}>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '12px',
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
@@ -578,7 +469,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               Total Improvements
             </p>
             <p style={{
-              fontFamily: FONTS.display,
+              fontFamily: '"Playfair Display", serif',
               fontSize: '48px',
               fontWeight: 700,
               color: COLORS.accent,
@@ -588,57 +479,15 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               {property.entries.length}
             </p>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               color: COLORS.secondary,
-              margin: '0'
+              margin: 0
             }}>
               maintenance records logged
             </p>
           </div>
 
-          {/* Energy Rating */}
-          {latestEPC && (
-            <div style={{
-              backgroundColor: COLORS.surface,
-              border: `2px solid ${COLORS.border}`,
-              borderRadius: '14px',
-              padding: '40px',
-              boxShadow: '0 4px 12px rgba(54, 117, 111, 0.08)'
-            }}>
-              <p style={{
-                fontFamily: FONTS.body,
-                fontSize: '12px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.8px',
-                color: COLORS.secondary,
-                margin: '0 0 16px 0',
-                fontWeight: 700
-              }}>
-                Energy Rating
-              </p>
-              <p style={{
-                fontFamily: FONTS.display,
-                fontSize: '48px',
-                fontWeight: 700,
-                color: COLORS.primary,
-                margin: '0 0 12px 0',
-                letterSpacing: '-1px'
-              }}>
-                {latestEPC.epcAfter}
-              </p>
-              <p style={{
-                fontFamily: FONTS.body,
-                fontSize: '14px',
-                color: COLORS.secondary,
-                margin: '0'
-              }}>
-                efficiency tracked
-              </p>
-            </div>
-          )}
-
-          {/* Property Details */}
           <div style={{
             backgroundColor: COLORS.surface,
             border: `2px solid ${COLORS.border}`,
@@ -647,7 +496,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
             boxShadow: '0 4px 12px rgba(54, 117, 111, 0.08)'
           }}>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '12px',
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
@@ -658,7 +507,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               Property Details
             </p>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '16px',
               fontWeight: 600,
               color: COLORS.text,
@@ -667,27 +516,25 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               {property.propertyType}
             </p>
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               color: COLORS.secondary,
-              margin: '0'
+              margin: 0
             }}>
               {property.location}, {property.postcode}
             </p>
           </div>
         </div>
 
-        {/* Records Section */}
         <div style={{
           backgroundColor: COLORS.surface,
           border: `2px solid ${COLORS.border}`,
           borderRadius: '14px',
           padding: '40px',
-          marginBottom: '48px',
-          boxShadow: '0 4px 12px rgba(54, 117, 111, 0.08)'
+          marginBottom: '48px'
         }}>
           <h2 style={{
-            fontFamily: FONTS.display,
+            fontFamily: '"Playfair Display", serif',
             fontSize: '32px',
             fontWeight: 700,
             color: COLORS.primary,
@@ -699,12 +546,12 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
 
           {property.entries.length === 0 ? (
             <p style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '16px',
               color: COLORS.secondary,
               textAlign: 'center',
               padding: '60px 0',
-              margin: '0'
+              margin: 0
             }}>
               No records yet. Start logging improvements to track your property's value.
             </p>
@@ -725,7 +572,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
                   }}
                 >
                   <p style={{
-                    fontFamily: FONTS.body,
+                    fontFamily: '"Lora", serif',
                     fontSize: '11px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.8px',
@@ -736,7 +583,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
                     {entry.category || 'Improvement'}
                   </p>
                   <h4 style={{
-                    fontFamily: FONTS.display,
+                    fontFamily: '"Playfair Display", serif',
                     fontSize: '20px',
                     fontWeight: 700,
                     color: COLORS.primary,
@@ -745,7 +592,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
                     {entry.title}
                   </h4>
                   <p style={{
-                    fontFamily: FONTS.body,
+                    fontFamily: '"Lora", serif',
                     fontSize: '14px',
                     color: COLORS.secondary,
                     margin: '0 0 16px 0',
@@ -754,12 +601,12 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
                     {entry.description}
                   </p>
                   <p style={{
-                    fontFamily: FONTS.body,
+                    fontFamily: '"Lora", serif',
                     fontSize: '12px',
                     color: COLORS.secondary,
-                    margin: '0'
+                    margin: 0
                   }}>
-                    {new Date(entry.date).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date(entry.date).toLocaleDateString()}
                   </p>
                 </div>
               ))}
@@ -767,7 +614,6 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
           )}
         </div>
 
-        {/* Action Buttons */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -781,12 +627,12 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               border: 'none',
               borderRadius: '10px',
               padding: '18px 28px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 12px rgba(54, 117, 111, 0.2)'
+              boxShadow: '0 4px 12px rgba(54, 117, 111, 0.2)',
+              transition: 'all 0.3s ease'
             }}
             onMouseOver={(e) => {
               e.target.style.backgroundColor = '#2a5a57';
@@ -808,12 +654,12 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               border: 'none',
               borderRadius: '10px',
               padding: '18px 28px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              boxShadow: '0 4px 12px rgba(166, 139, 91, 0.2)'
+              boxShadow: '0 4px 12px rgba(166, 139, 91, 0.2)',
+              transition: 'all 0.3s ease'
             }}
             onMouseOver={(e) => {
               e.target.style.opacity = '0.9';
@@ -828,30 +674,6 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
           </button>
 
           <button
-            onClick={exportPDF}
-            style={{
-              backgroundColor: 'transparent',
-              color: COLORS.primary,
-              border: `2px solid ${COLORS.primary}`,
-              borderRadius: '10px',
-              padding: '18px 28px',
-              fontFamily: FONTS.body,
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = `${COLORS.primary}10`;
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-            }}
-          >
-            📄 Export PDF
-          </button>
-
-          <button
             onClick={onDelete}
             style={{
               backgroundColor: 'transparent',
@@ -859,7 +681,7 @@ function PropertyDetailPage({ property, isPro, onBack, onDelete, onAddProperty }
               border: `2px solid ${COLORS.border}`,
               borderRadius: '10px',
               padding: '18px 28px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '15px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -926,7 +748,7 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
         overflowY: 'auto'
       }}>
         <h2 style={{
-          fontFamily: FONTS.display,
+          fontFamily: '"Playfair Display", serif',
           fontSize: '36px',
           fontWeight: 700,
           color: COLORS.primary,
@@ -939,13 +761,12 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '24px' }}>
             <label style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               fontWeight: 600,
               color: COLORS.text,
               display: 'block',
-              marginBottom: '10px',
-              letterSpacing: '0.2px'
+              marginBottom: '10px'
             }}>
               Property Name
             </label>
@@ -959,14 +780,11 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 padding: '14px 16px',
                 border: `2px solid ${COLORS.border}`,
                 borderRadius: '10px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 boxSizing: 'border-box',
-                backgroundColor: COLORS.surface,
-                transition: 'border-color 0.2s'
+                backgroundColor: COLORS.surface
               }}
-              onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-              onBlur={(e) => e.target.style.borderColor = COLORS.border}
               required
             />
           </div>
@@ -974,13 +792,12 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
             <div>
               <label style={{
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 fontWeight: 600,
                 color: COLORS.text,
                 display: 'block',
-                marginBottom: '10px',
-                letterSpacing: '0.2px'
+                marginBottom: '10px'
               }}>
                 Postcode
               </label>
@@ -994,26 +811,22 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                   padding: '14px 16px',
                   border: `2px solid ${COLORS.border}`,
                   borderRadius: '10px',
-                  fontFamily: FONTS.body,
+                  fontFamily: '"Lora", serif',
                   fontSize: '14px',
                   boxSizing: 'border-box',
-                  backgroundColor: COLORS.surface,
-                  transition: 'border-color 0.2s'
+                  backgroundColor: COLORS.surface
                 }}
-                onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-                onBlur={(e) => e.target.style.borderColor = COLORS.border}
                 required
               />
             </div>
             <div>
               <label style={{
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 fontWeight: 600,
                 color: COLORS.text,
                 display: 'block',
-                marginBottom: '10px',
-                letterSpacing: '0.2px'
+                marginBottom: '10px'
               }}>
                 House Number
               </label>
@@ -1027,14 +840,11 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                   padding: '14px 16px',
                   border: `2px solid ${COLORS.border}`,
                   borderRadius: '10px',
-                  fontFamily: FONTS.body,
+                  fontFamily: '"Lora", serif',
                   fontSize: '14px',
                   boxSizing: 'border-box',
-                  backgroundColor: COLORS.surface,
-                  transition: 'border-color 0.2s'
+                  backgroundColor: COLORS.surface
                 }}
-                onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-                onBlur={(e) => e.target.style.borderColor = COLORS.border}
                 required
               />
             </div>
@@ -1042,13 +852,12 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               fontWeight: 600,
               color: COLORS.text,
               display: 'block',
-              marginBottom: '10px',
-              letterSpacing: '0.2px'
+              marginBottom: '10px'
             }}>
               Property Type
             </label>
@@ -1060,7 +869,7 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 padding: '14px 16px',
                 border: `2px solid ${COLORS.border}`,
                 borderRadius: '10px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 boxSizing: 'border-box',
                 backgroundColor: COLORS.surface,
@@ -1077,13 +886,12 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
 
           <div style={{ marginBottom: '24px' }}>
             <label style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               fontWeight: 600,
               color: COLORS.text,
               display: 'block',
-              marginBottom: '10px',
-              letterSpacing: '0.2px'
+              marginBottom: '10px'
             }}>
               Location
             </label>
@@ -1097,27 +905,23 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 padding: '14px 16px',
                 border: `2px solid ${COLORS.border}`,
                 borderRadius: '10px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 boxSizing: 'border-box',
-                backgroundColor: COLORS.surface,
-                transition: 'border-color 0.2s'
+                backgroundColor: COLORS.surface
               }}
-              onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-              onBlur={(e) => e.target.style.borderColor = COLORS.border}
               required
             />
           </div>
 
           <div style={{ marginBottom: '32px' }}>
             <label style={{
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               fontWeight: 600,
               color: COLORS.text,
               display: 'block',
-              marginBottom: '10px',
-              letterSpacing: '0.2px'
+              marginBottom: '10px'
             }}>
               Estimated Value (£)
             </label>
@@ -1130,14 +934,11 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 padding: '14px 16px',
                 border: `2px solid ${COLORS.border}`,
                 borderRadius: '10px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '14px',
                 boxSizing: 'border-box',
-                backgroundColor: COLORS.surface,
-                transition: 'border-color 0.2s'
+                backgroundColor: COLORS.surface
               }}
-              onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-              onBlur={(e) => e.target.style.borderColor = COLORS.border}
               required
             />
           </div>
@@ -1151,7 +952,7 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 border: 'none',
                 borderRadius: '10px',
                 padding: '16px 24px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '15px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -1178,17 +979,10 @@ function AddPropertyForm({ onSubmit, onCancel, isPro, propertiesCount }) {
                 border: `2px solid ${COLORS.border}`,
                 borderRadius: '10px',
                 padding: '16px 24px',
-                fontFamily: FONTS.body,
+                fontFamily: '"Lora", serif',
                 fontSize: '15px',
                 fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseOver={(e) => {
-                e.target.style.borderColor = COLORS.text;
-              }}
-              onMouseOut={(e) => {
-                e.target.style.borderColor = COLORS.border;
+                cursor: 'pointer'
               }}
             >
               Cancel
@@ -1250,7 +1044,7 @@ function UpgradeModal({ onCancel }) {
         textAlign: 'center'
       }}>
         <h2 style={{
-          fontFamily: FONTS.display,
+          fontFamily: '"Playfair Display", serif',
           fontSize: '40px',
           fontWeight: 700,
           color: COLORS.primary,
@@ -1261,7 +1055,7 @@ function UpgradeModal({ onCancel }) {
         </h2>
         
         <p style={{
-          fontFamily: FONTS.body,
+          fontFamily: '"Lora", serif',
           fontSize: '18px',
           color: COLORS.secondary,
           margin: '0 0 40px 0',
@@ -1281,14 +1075,12 @@ function UpgradeModal({ onCancel }) {
               padding: '14px 16px',
               border: `2px solid ${COLORS.border}`,
               borderRadius: '10px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '14px',
               marginBottom: '20px',
               boxSizing: 'border-box',
               backgroundColor: COLORS.surface
             }}
-            onFocus={(e) => e.target.style.borderColor = COLORS.primary}
-            onBlur={(e) => e.target.style.borderColor = COLORS.border}
             required
           />
           <button
@@ -1301,7 +1093,7 @@ function UpgradeModal({ onCancel }) {
               border: 'none',
               borderRadius: '10px',
               padding: '16px 24px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '15px',
               fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
@@ -1323,17 +1115,10 @@ function UpgradeModal({ onCancel }) {
               border: `2px solid ${COLORS.border}`,
               borderRadius: '10px',
               padding: '16px 24px',
-              fontFamily: FONTS.body,
+              fontFamily: '"Lora", serif',
               fontSize: '15px',
               fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.borderColor = COLORS.text;
-            }}
-            onMouseOut={(e) => {
-              e.target.style.borderColor = COLORS.border;
+              cursor: 'pointer'
             }}
           >
             Continue Free
