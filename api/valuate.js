@@ -1,19 +1,16 @@
-// api/value.js
 export default async function handler(req, res) {
-  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Use POST method' });
   }
 
   const { postcode, houseNumber } = req.body;
 
-  // Check required fields
   if (!postcode || !houseNumber) {
     return res.status(400).json({ error: 'Postcode and house number required' });
   }
 
   try {
-    // 1. Validate the postcode
+    // Validate postcode
     const cleanPostcode = postcode.replace(/\s/g, '');
     const pcResponse = await fetch(`https://api.postcodes.io/postcodes/${cleanPostcode}`);
     const pcData = await pcResponse.json();
@@ -22,7 +19,7 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Invalid postcode' });
     }
 
-    // 2. Get EPC data from government API
+    // Get EPC data
     const epcResponse = await fetch(
       `https://get-energy-performance-data.communities.gov.uk/api/domestic/search?postcode=${cleanPostcode}`,
       {
@@ -34,15 +31,13 @@ export default async function handler(req, res) {
 
     const epcData = await epcResponse.json();
 
-    // 3. Check if we found any properties
     if (!epcData.rows || epcData.rows.length === 0) {
       return res.status(404).json({ 
-        error: 'No EPC found for this postcode',
-        message: 'Try a different postcode or add the full address'
+        error: 'No EPC found for this postcode'
       });
     }
 
-    // 4. Find the specific property by house number
+    // Find property by house number
     const property = epcData.rows.find(p => 
       p.address?.includes(houseNumber) || 
       p.address?.includes(` ${houseNumber} `)
@@ -51,16 +46,15 @@ export default async function handler(req, res) {
     if (!property) {
       return res.status(404).json({ 
         error: 'Property not found',
-        message: `No property with number ${houseNumber} found at this postcode`
+        message: `No property with number ${houseNumber} found`
       });
     }
 
-    // 5. Calculate valuation
+    // Calculate valuation
     const floorArea = property.totalFloorArea || 80;
-    const pricePerSqm = 2500; // UK average (you can enhance this later)
+    const pricePerSqm = 2500; // UK average (you can make this dynamic later)
     const estimatedValue = Math.round(floorArea * pricePerSqm);
 
-    // 6. Return the result
     return res.status(200).json({
       success: true,
       valuation: {
@@ -77,7 +71,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Valuation error:', error);
     return res.status(500).json({ 
-      error: 'Valuation service error', 
+      error: 'Valuation failed', 
       message: error.message 
     });
   }
