@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -9,115 +11,90 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  if (!process.env.EPC_BEARER_TOKEN) {
+    console.error('EPC_BEARER_TOKEN not configured');
+    return res.status(500).json({ error: 'Valuation service not configured' });
+  }
+
   try {
-    // Step 1: Validate and get postcode info
-    const postcodeValidation = await fetch(
-      `https://api.postcodes.io/postcodes/${postcode.replace(/\s/g, '')}`
-    );
-    const postcodeData = await postcodeValidation.json();
+    // Step 1: Validate postcode with postcodes.io
+    const postcodeResponse = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+    const postcodeData = await postcodeResponse.json();
 
     if (!postcodeData.result) {
-      return res.status(404).json({ error: 'Invalid UK postcode' });
+      return res.status(400).json({ error: 'Invalid postcode', success: false });
     }
 
-    // Step 2: Fetch EPC data using government API with bearer token
-    const epcToken = process.env.EPC_BEARER_TOKEN;
-    if (!epcToken) {
-      return res.status(500).json({ error: 'EPC API token not configured' });
-    }
+    const region = postcodeData.result.region || 'Unknown';
+    const latitude = postcodeData.result.latitude;
+    const longitude = postcodeData.result.longitude;
 
-    const epcQuery = `https://api.epc.opendatasoft.com/api/v3/efficiency/search?postcode=${postcode.replace(
-      /\s/g,
-      ''
-    )}&address=${encodeURIComponent(houseNumber)}`;
-
-    const epcResponse = await fetch(epcQuery, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${epcToken}`,
-        'Content-Type': 'application/json'
+    // Step 2: Get EPC data
+    const epcResponse = await fetch(
+      `https://api.epc.opendatasoft.com/api/v3/efficiency/search?postcode=${encodeURIComponent(postcode)}&house_number=${encodeURIComponent(houseNumber)}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.EPC_BEARER_TOKEN}`
+        }
       }
-    });
+    );
 
     const epcData = await epcResponse.json();
-    let floorArea = 100;
-    let propertyTypeFromEPC = propertyType;
-    let energyRating = 'Unknown';
+    let floorArea = 100; // Default
+    let energyRating = 'D'; // Default
 
     if (epcData.results && epcData.results.length > 0) {
-      const property = epcData.results[0];
-      floorArea = property.total_floor_area || 100;
-      propertyTypeFromEPC = property.property_type || propertyType;
-      energyRating = property.current_energy_rating || 'Unknown';
+      const latestEPC = epcData.results[0];
+      floorArea = latestEPC.total_floor_area || 100;
+      energyRating = latestEPC.energy_efficiency_rating || 'D';
     }
 
-    // Step 3: Calculate price per m² using regional data + House Price Index
-    const postcodePrefix = postcode.substring(0, 2).toUpperCase();
-    const pricePerSqm = getRegionalPricePerSqm(postcodePrefix);
+    // Step 3: Calculate valuation
+    const pricePerSqMByRegion = {
+      'East Midlands': 2100,
+      'East of England': 2800,
+      'London': 5200,
+      'Merseyside': 2800,
+      'North East': 1800,
+      'North West': 3100,
+      'Northern Ireland': 1900,
+      'Scotland': 2400,
+      'South East': 2800,
+      'South West': 3500,
+      'Stoke-on-Trent': 2200,
+      'West Midlands': 2600,
+      'Yorkshire and The Humber': 2400,
+      'Wales': 2200,
+      'Unknown': 2800
+    };
 
-    // Step 4: Apply property type multiplier
     const typeMultipliers = {
       'Flat': 0.85,
       'Terraced': 1.0,
       'Semi-detached': 1.15,
-      'Detached': 1.3,
-      'Bungalow': 1.1
+      'Detached': 1.30,
+      'Bungalow': 1.10
     };
 
+    const pricePerSqM = pricePerSqMByRegion[region] || 2800;
     const multiplier = typeMultipliers[propertyType] || 1.0;
-    const estimatedValue = Math.round(floorArea * pricePerSqm * multiplier);
+    const estimatedValue = Math.round(floorArea * pricePerSqM * multiplier);
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
       estimatedValue,
-      floorArea,
-      pricePerSqm,
-      multiplier,
-      method: 'UK Government Data (EPC + House Price Index)',
-      confidence: 'High',
-      postcode: postcode.toUpperCase(),
-      propertyType: propertyTypeFromEPC,
+      floorArea: Math.round(floorArea),
+      pricePerSqm: pricePerSqM,
+      propertyType,
+      region,
       energyRating,
-      datasource: 'data.gov.uk + ONS',
-      timestamp: new Date().toISOString()
+      method: `Based on ${floorArea}m² in ${region}`,
+      latitude,
+      longitude
     });
+
   } catch (error) {
     console.error('Valuation error:', error);
-    return res.status(500).json({
-      error: 'Valuation lookup failed',
-      details: error.message
-    });
+    res.status(500).json({ error: error.message, success: false });
   }
-}
-
-function getRegionalPricePerSqm(postcodePrefix) {
-  const regionalData = {
-    'SW': 3500,
-    'SE': 2800,
-    'E': 2400,
-    'EC': 3600,
-    'N': 2900,
-    'NW': 3100,
-    'W': 3900,
-    'CR': 2100,
-    'KT': 2900,
-    'SM': 2600,
-    'RH': 2400,
-    'TW': 2750,
-    'SL': 3100,
-    'B': 1900,
-    'M': 2100,
-    'LS': 2000,
-    'CB': 2900,
-    'OX': 3100,
-    'BN': 2400,
-    'BS': 2400,
-    'CF': 1900,
-    'EH': 2800,
-    'GU': 2600,
-    'SO': 2500,
-    'BH': 2200
-  };
-
-  return regionalData[postcodePrefix] || 2500;
 }
